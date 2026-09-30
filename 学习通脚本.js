@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         💯【超星学习通满分助手】支持任务点自动跳转|章节测验、作业、考试全网检索答案，简答题支持chatgpt对接|音频、视频全自动静音播放|可视化参数配置
 // @namespace    askAuto
-// @version      2.1.7
+// @version      2.1.8
 // @author       shushoujiu
 // @description  💯超星学习通满分助手，挂机解放时间，无需任何操作自动完成所有任务点。汇集全网免费、付费题库接口支持一键对接，答案更全更靠谱。
 // @icon         https://vitejs.dev/logo.svg
@@ -67,7 +67,7 @@
       _GM_setValue("config", config);
     }
     return config;
-  }, defaultConfig$1 = { debugger: false, autoAnswer: true, autoVideo: true, autoJump: true, autoSubmit: true, thtoken: "", yztoken: "", gptKey: "", gptModel: "gpt-3.5-turbo", gpt: false, gptType: ["0", "1", "2", "3", "4", "5", "6", "7"], interval: 3, answerIntervalMin: 8, answerIntervalMax: 30, submitDelayMin: 20, submitDelayMax: 40, minAccuracy: 0.8, autoExam: true, hideExam: false, notice: "本脚本仅供学习交流使用，严禁用于商业用途，否则后果自负！", deepseekKey: "", deepseekEnabled: false, deepseekModel: "deepseek-reasoner", customApiUrl: "", customApiKey: "", customApiEnabled: false, aiEnabled: false, aiApiKey: "", aiApiUrl: "https://api.deepseek.com/v1/chat/completions", aiModel: "deepseek-reasoner" }, userConfig = [{ name: "base", label: "基础配置", config: [{ name: "interval", label: "通用间隔(秒)", type: "number", value: defaultConfig$1.interval, desc: "通用间隔，用于脚本运行切换" }, { name: "answerIntervalMin", label: "答题间隔最小值(秒)", type: "number", value: defaultConfig$1.answerIntervalMin, desc: "每道题之间的最小等待时间" }, { name: "answerIntervalMax", label: "答题间隔最大值(秒)", type: "number", value: defaultConfig$1.answerIntervalMax, desc: "每道题之间的最大等待时间" }, { name: "submitDelayMin", label: "提交前延迟最小值(秒)", type: "number", value: defaultConfig$1.submitDelayMin, desc: "全部答完题后提交前的最小等待时间" }, { name: "submitDelayMax", label: "提交前延迟最大值(秒)", type: "number", value: defaultConfig$1.submitDelayMax, desc: "全部答完题后提交前的最大等待时间" }, { name: "customApiEnabled", label: "启用自定义题库", type: "switch", value: defaultConfig$1.customApiEnabled, desc: "开启后，会优先使用自定义题库接口查询答案" }, { name: "customApiUrl", label: "自定义题库地址", type: "input", value: defaultConfig$1.customApiUrl, desc: "你的题库服务器API地址，例如：http://localhost:8080/api/query" }, { name: "customApiKey", label: "自定义题库密钥", type: "input", value: defaultConfig$1.customApiKey, desc: "你的题库服务器API密钥（如果有的话）" }, { name: "aiEnabled", label: "启用AI自动答题", type: "switch", value: defaultConfig$1.aiEnabled, desc: "开启后，当题库查询失败时会调用AI获取答案" }, { name: "aiApiUrl", label: "AI API地址", type: "input", value: defaultConfig$1.aiApiUrl, desc: "OpenAI兼容接口地址，完整路径如：https://api.deepseek.com/v1/chat/completions；只填 https://xxx 或 https://xxx/v1 也会自动补全并逐个尝试" }, { name: "aiModel", label: "AI模型名称", type: "input", value: defaultConfig$1.aiModel, desc: "模型名称，例如：deepseek-reasoner、gpt-4o、claude-3-opus等" }, { name: "aiApiKey", label: "AI API密钥", type: "input", value: defaultConfig$1.aiApiKey, desc: "API密钥，填写完请保存再刷新页面" }] }, { name: "chapter", label: "章节配置", config: [{ name: "autoAnswer", label: "自动答题", type: "switch", value: defaultConfig$1.autoAnswer, desc: "开启后，会自动答题" }, { name: "autoVideo", label: "自动视频", type: "switch", value: defaultConfig$1.autoVideo, desc: "开启后，会自动观看视频" }, { name: "autoJump", label: "自动切换", type: "switch", value: defaultConfig$1.autoVideo, desc: "开启后，会自动切换章节" }, { name: "autoSubmit", label: "自动提交", type: "switch", value: defaultConfig$1.autoSubmit, desc: "开启后，会自动提交答案" }, { name: "minAccuracy", label: "最低正确率", type: "input", value: defaultConfig$1.minAccuracy, desc: "不满足最低正确率则不会自动提交答案" }] }, { name: "exam", label: "作业/考试配置", config: [{ name: "autoExam", label: "考试自动切换", type: "switch", value: defaultConfig$1.autoExam, desc: "开启后，会考试会自动切换" }] }], useformStore = pinia$1.defineStore({ id: "formstore", state: () => ({ forminput: getConfig(), dialogV: false, activeName: "base" }), actions: { saveConfig(forminput) {
+  }, defaultConfig$1 = { debugger: false, autoAnswer: true, autoVideo: true, autoJump: true, autoSubmit: true, thtoken: "", yztoken: "", gptKey: "", gptModel: "gpt-3.5-turbo", gpt: false, gptType: ["0", "1", "2", "3", "4", "5", "6", "7"], interval: 3, answerIntervalMin: 8, answerIntervalMax: 30, questionTimeout: 120, submitDelayMin: 20, submitDelayMax: 40, minAccuracy: 0.8, autoExam: true, hideExam: false, notice: "本脚本仅供学习交流使用，严禁用于商业用途，否则后果自负！", deepseekKey: "", deepseekEnabled: false, deepseekModel: "deepseek-reasoner", customApiUrl: "", customApiKey: "", customApiEnabled: false, aiEnabled: false, aiApiKey: "", aiApiUrl: "https://api.deepseek.com/v1/chat/completions", aiModel: "deepseek-reasoner" }, userConfig = [{ name: "base", label: "基础配置", config: [{ name: "interval", label: "通用间隔(秒)", type: "number", value: defaultConfig$1.interval, desc: "通用间隔，用于脚本运行切换" }, { name: "answerIntervalMin", label: "答题间隔最小值(秒)", type: "number", value: defaultConfig$1.answerIntervalMin, desc: "每道题之间的最小等待时间" }, { name: "answerIntervalMax", label: "答题间隔最大值(秒)", type: "number", value: defaultConfig$1.answerIntervalMax, desc: "每道题之间的最大等待时间" }, { name: "submitDelayMin", label: "提交前延迟最小值(秒)", type: "number", value: defaultConfig$1.submitDelayMin, desc: "全部答完题后提交前的最小等待时间" }, { name: "submitDelayMax", label: "提交前延迟最大值(秒)", type: "number", value: defaultConfig$1.submitDelayMax, desc: "全部答完题后提交前的最大等待时间" }, { name: "customApiEnabled", label: "启用自定义题库", type: "switch", value: defaultConfig$1.customApiEnabled, desc: "开启后，会优先使用自定义题库接口查询答案" }, { name: "customApiUrl", label: "自定义题库地址", type: "input", value: defaultConfig$1.customApiUrl, desc: "你的题库服务器API地址，例如：http://localhost:8080/api/query" }, { name: "customApiKey", label: "自定义题库密钥", type: "input", value: defaultConfig$1.customApiKey, desc: "你的题库服务器API密钥（如果有的话）" }, { name: "aiEnabled", label: "启用AI自动答题", type: "switch", value: defaultConfig$1.aiEnabled, desc: "开启后，当题库查询失败时会调用AI获取答案" }, { name: "aiApiUrl", label: "AI API地址", type: "input", value: defaultConfig$1.aiApiUrl, desc: "OpenAI兼容接口地址，完整路径如：https://api.deepseek.com/v1/chat/completions；只填 https://xxx 或 https://xxx/v1 也会自动补全并逐个尝试" }, { name: "aiModel", label: "AI模型名称", type: "input", value: defaultConfig$1.aiModel, desc: "模型名称，例如：deepseek-reasoner、gpt-4o、claude-3-opus等" }, { name: "aiApiKey", label: "AI API密钥", type: "input", value: defaultConfig$1.aiApiKey, desc: "API密钥，填写完请保存再刷新页面" }, { name: "questionTimeout", label: "单题超时(秒)", type: "number", value: defaultConfig$1.questionTimeout, desc: "单题查询+填写的最长秒数，超过则超时跳过该题并放弃本测验剩余题(不强制提交，按原有正确率规则)；0=关闭。计时不含每题间的随机间隔" }] }, { name: "chapter", label: "章节配置", config: [{ name: "autoAnswer", label: "自动答题", type: "switch", value: defaultConfig$1.autoAnswer, desc: "开启后，会自动答题" }, { name: "autoVideo", label: "自动视频", type: "switch", value: defaultConfig$1.autoVideo, desc: "开启后，会自动观看视频" }, { name: "autoJump", label: "自动切换", type: "switch", value: defaultConfig$1.autoVideo, desc: "开启后，会自动切换章节" }, { name: "autoSubmit", label: "自动提交", type: "switch", value: defaultConfig$1.autoSubmit, desc: "开启后，会自动提交答案" }, { name: "minAccuracy", label: "最低正确率", type: "input", value: defaultConfig$1.minAccuracy, desc: "不满足最低正确率则不会自动提交答案" }] }, { name: "exam", label: "作业/考试配置", config: [{ name: "autoExam", label: "考试自动切换", type: "switch", value: defaultConfig$1.autoExam, desc: "开启后，会考试会自动切换" }] }], useformStore = pinia$1.defineStore({ id: "formstore", state: () => ({ forminput: getConfig(), dialogV: false, activeName: "base" }), actions: { saveConfig(forminput) {
     _GM_setValue("config", forminput);
   } } });
   var export_helper_default = (sfc, props) => {
@@ -252,7 +252,14 @@
       });
     }
     async getAnswerFromAI(questionData) {
-      return new Promise((resolve) => {
+      return new Promise((outerResolve) => {
+        let settled = false, watchdog = null;
+        const resolve = (result) => {
+          if (settled) return;
+          settled = true;
+          if (watchdog) clearTimeout(watchdog);
+          outerResolve(result);
+        };
         const config = getConfig();
         if (!config.aiEnabled || !config.aiApiKey) {
           resolve({ form: "AI", answer: "" });
@@ -329,22 +336,41 @@
           resolve({ form: "AI", answer: "" });
           return;
         }
-        let attempt = 0;
+        let attempt = 0, expired = false, fallbackUsed = false;
         const failLogs = [];
+        watchdog = setTimeout(() => {
+          expired = true;
+          console.log(`AI看门狗超时(${candidates.length * 60 + 10}秒内未完成)，强制返回空答案`);
+          resolve({ form: "AI", answer: "" });
+        }, candidates.length * 6e4 + 1e4);
+        const safeSend = () => {
+          if (expired) return;
+          try {
+            sendRequest();
+          } catch (e) {
+            console.log("AI请求发起异常:", e);
+            expired = true;
+            resolve({ form: "AI", answer: "" });
+          }
+        };
         const failOver = (reason) => {
+          if (expired) return;
           if (reason) failLogs.push(reason);
           attempt += 1;
-          if (attempt >= candidates.length && cachedUrl && candidates.length === 1) {
+          if (attempt >= candidates.length && !fallbackUsed && cachedUrl) {
+            fallbackUsed = true;
+            delete aiUrlHit[base];
             const fallback = this.aiUrlCandidates(base).filter((u) => u !== cachedUrl);
             if (fallback.length) {
-              console.log("缓存的AI地址已失效，回退到完整候选列表");
+              console.log("当前地址全部失败，回退到完整候选列表再试一次");
               candidates = fallback;
               attempt = 0;
             }
           }
           if (attempt < candidates.length) {
-            sendRequest();
+            safeSend();
           } else {
+            expired = true;
             console.log("AI请求失败，各候选地址结果:\n" + failLogs.join("\n"));
             resolve({ form: "AI", answer: "" });
           }
@@ -362,6 +388,7 @@
           },
           timeout: 6e4,
           onload: (res) => {
+            try {
             if (res.status < 200 || res.status >= 300) {
               const snippet = String(res.responseText || "").replace(/\s+/g, " ").slice(0, 200);
               if (res.status === 401 || res.status === 403) {
@@ -451,6 +478,10 @@
               console.log("AI解析错误:", e);
               failOver(`返回非JSON ${requestUrl} -> body=${String(res.responseText || "").replace(/\s+/g, " ").slice(0, 200)}`);
             }
+            } catch (outerErr) {
+              console.log("AI onload未捕获异常:", outerErr);
+              failOver(`onload异常 ${requestUrl} -> ${outerErr && outerErr.message || outerErr}`);
+            }
           },
           ontimeout: () => {
             console.log("AI请求超时");
@@ -462,7 +493,7 @@
           }
         });
         };
-        sendRequest();
+        safeSend();
       });
     }
     async s(questionList, url) {
@@ -1689,7 +1720,21 @@
     setTimeout(() => {
       resolve();
     }, 1e3 * randomTime);
-  }), waitIframeLoaded = (iframe) => new Promise((resolve) => {
+  }), withTimeout = (promise, ms, label = "任务") => {
+    const timeoutMs = Number(ms);
+    if (!(timeoutMs > 0)) return promise;
+    let timer = null;
+    const timedOutPromise = new Promise((resolve) => {
+      timer = setTimeout(() => {
+        console.log(`${label}超过 ${timeoutMs / 1e3} 秒未完成，触发超时跳过`);
+        resolve({ timedOut: true });
+      }, timeoutMs);
+    });
+    return Promise.race([promise, timedOutPromise]).then((value) => {
+      clearTimeout(timer);
+      return value;
+    });
+  }, waitIframeLoaded = (iframe) => new Promise((resolve) => {
     const timer = setInterval(() => {
       var _a;
       iframe.contentDocument && "complete" === ((_a = iframe.contentDocument) == null ? void 0 : _a.readyState) ? (clearInterval(timer), resolve()) : iframe.addEventListener("load", () => {
@@ -2008,22 +2053,29 @@
         const Timu = iframeWindow.document.querySelectorAll(".TiMu");
         if (!Timu)
           return void resolve();
-        let ques = [], succ = 0;
+        let ques = [], succ = 0, abandoned = false;
         for (let i = 0; i < Timu.length; i++) {
           let data = getQuestion("1", Timu[i]);
           console.log(data), ques.push(data);
         }
         this.askStore.reset(), this.askStore.count = ques.length, this.askStore.task.name = "章节测验";
+        const rawTimeout = this.defaultConfig.questionTimeout;
+        const questionTimeoutMs = rawTimeout === undefined || rawTimeout === null || rawTimeout === "" ? 120e3 : Number(rawTimeout) > 0 ? Number(rawTimeout) * 1e3 : 0;
         for (let i = 0; i < ques.length; i++) {
           await randomSleep(this.defaultConfig.answerIntervalMin, this.defaultConfig.answerIntervalMax), this.askStore.insert(ques[i]), this.askStore.task.work.inx = i;
-          let data = await getAnswers(ques[i], iframeWindow);
+          let data = await withTimeout(getAnswers(ques[i], iframeWindow), questionTimeoutMs, `第${i + 1}题`);
+          if (data && data.timedOut === true) {
+            this.askStore.get(i).status = "danger", this.askStore.get(i).answer = "超时跳过", this.askStore.get(i).dom = Timu[i];
+            this.askStore.log(`第 ${i + 1} 题超过 ${questionTimeoutMs / 1e3} 秒未完成，超时跳过，放弃本测验剩余题`, "error"), abandoned = true;
+            break;
+          }
           this.askStore.get(i).allAnswer = data;
           let tmp = fillAnswer(data, ques[i], Timu[i], iframeWindow);
           tmp ? (this.askStore.get(i).status = "primary", this.askStore.get(i).answer = tmp, succ++) : (this.askStore.get(i).status = "danger", this.askStore.get(i).answer = "暂无答案"), this.askStore.get(i).dom = Timu[i];
         }
         this.defaultConfig.autoSubmit ? (succ / ques.length < this.defaultConfig.minAccuracy ? (this.askStore.log("章节测验正确率不足，暂存", "error"), iframeWindow.alert = function(e) {
           console.log("alert 方法被阻止", e);
-        }, iframeWindow.noSubmit()) : (await randomSleep(this.defaultConfig.submitDelayMin, this.defaultConfig.submitDelayMax), iframeWindow.btnBlueSubmit(), await sleep(3), iframeWindow.submitCheckTimes(), this.askStore.log("章节测验已完成", "success"), await randomSleep(5, 10), this.askStore.log("正在刷新页面...", "info"), iframeWindow.location.reload()), this.askStore.task.status = `章节测验已完成，等待切换,正确率:${succ}/${ques.length}`, resolve()) : (this.askStore.log("已完成答题，未开启自动提交，等待手动提交中", "success"), this.askStore.task.status = `正在等待手动提交,正确率:${succ}/${ques.length}`);
+        }, iframeWindow.noSubmit()) : (await randomSleep(this.defaultConfig.submitDelayMin, this.defaultConfig.submitDelayMax), iframeWindow.btnBlueSubmit(), await sleep(3), iframeWindow.submitCheckTimes(), this.askStore.log("章节测验已完成", "success"), await randomSleep(5, 10), this.askStore.log("正在刷新页面...", "info"), iframeWindow.location.reload()), this.askStore.task.status = (abandoned ? "超时跳过，放弃本测验剩余题,正确率:" : "章节测验已完成，等待切换,正确率:") + `${succ}/${ques.length}`, resolve()) : (this.askStore.log("已完成答题，未开启自动提交，等待手动提交中", "success"), this.askStore.task.status = `正在等待手动提交,正确率:${succ}/${ques.length}`, resolve());
       });
     }
     homework() {
@@ -2037,13 +2089,21 @@
           ques.push(data);
         }
         this.askStore.reset(), this.askStore.count = ques.length, this.askStore.task.name = "作业";
+        const rawTimeout = this.defaultConfig.questionTimeout;
+        const questionTimeoutMs = rawTimeout === undefined || rawTimeout === null || rawTimeout === "" ? 120e3 : Number(rawTimeout) > 0 ? Number(rawTimeout) * 1e3 : 0;
         for (let i = 0; i < ques.length; i++) {
           await randomSleep(this.defaultConfig.answerIntervalMin, this.defaultConfig.answerIntervalMax), this.askStore.insert(ques[i]), this.askStore.task.work.inx = i;
-          let data = await getAnswers(ques[i]);
+          let data = await withTimeout(getAnswers(ques[i]), questionTimeoutMs, `第${i + 1}题`);
+          if (data && data.timedOut === true) {
+            this.askStore.get(i).status = "danger", this.askStore.get(i).answer = "超时跳过", this.askStore.get(i).dom = Timu[i];
+            this.askStore.log(`第 ${i + 1} 题超过 ${questionTimeoutMs / 1e3} 秒未完成，超时跳过，放弃本次作业剩余题`, "error");
+            break;
+          }
           this.askStore.get(i).allAnswer = data;
           let tmp = fillAnswer(data, ques[i], Timu[i], _unsafeWindow);
           tmp ? (this.askStore.get(i).status = "primary", this.askStore.get(i).answer = tmp) : (this.askStore.get(i).status = "danger", this.askStore.get(i).answer = "暂无答案"), this.askStore.get(i).dom = Timu[i];
         }
+        this.askStore.task.status = "作业填写结束", resolve();
       });
     }
     exam() {
@@ -2060,6 +2120,7 @@
           nextButton ? nextButton.click() : (this.askStore.log("已完成答题，请自行检查答案填写后自行提交", "success"), this.askStore.task.status = "已完成答题，请自行检查答案填写后自行提交");
         } else
           this.askStore.task.status = "未开启自动切换，等待手动切换";
+        resolve();
       });
     }
     pdf(iframeWindow) {
