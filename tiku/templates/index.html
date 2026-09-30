@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>題庫管理</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.staticfile.org/vue/3.3.4/vue.global.prod.js"></script>
+  <link rel="stylesheet" href="https://cdn.staticfile.org/element-plus/2.3.12/index.css">
+  <script src="https://cdn.staticfile.org/element-plus/2.3.12/index.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #f5f0e8;
+      --bg-card: #fffdf8;
+      --bg-hover: #f0ebe0;
+      --border: #e0d5c0;
+      --border-light: #ece5d8;
+      --gold: #c9a96e;
+      --gold-dim: rgba(201,169,110,0.12);
+      --gold-text: #8b7355;
+      --text: #2d2d2d;
+      --text-secondary: #7a6e5d;
+      --text-muted: #a89d8c;
+      --danger: #c0392b;
+      --danger-dim: rgba(192,57,43,0.08);
+      --success: #27ae60;
+      --success-dim: rgba(39,174,96,0.08);
+      --serif: 'Noto Serif SC', 'Songti SC', serif;
+      --sans: 'Noto Sans SC', system-ui, sans-serif;
+      --brush: 'Ma Shan Zheng', cursive;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Subtle paper texture */
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      opacity: 0.5;
+    }
+    #app { height: 100%; position: relative; z-index: 1; }
+
+    /* ============ Login ============ */
+    .login-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg);
+    }
+    .login-box {
+      width: 360px; padding: 48px 40px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 20px rgba(0,0,0,0.04);
+      text-align: center;
+    }
+    .login-title {
+      font-family: var(--brush);
+      font-size: 36px; color: var(--text);
+      margin-bottom: 4px; letter-spacing: 4px;
+    }
+    .login-sub {
+      font-size: 11px; color: var(--text-muted);
+      letter-spacing: 3px; margin-bottom: 32px;
+      font-family: var(--serif);
+    }
+    .login-input {
+      width: 100%; height: 42px; padding: 0 14px;
+      font-family: var(--serif); font-size: 13px;
+      color: var(--text); background: var(--bg);
+      border: 1px solid var(--border); outline: none;
+      transition: border-color 0.3s;
+    }
+    .login-input:focus { border-color: var(--gold); }
+    .login-input + .login-input { margin-top: 12px; }
+    .login-btn {
+      width: 100%; height: 42px; margin-top: 20px;
+      background: var(--gold); color: #fff;
+      border: none; font-family: var(--serif);
+      font-size: 14px; letter-spacing: 6px;
+      cursor: pointer; transition: opacity 0.3s;
+    }
+    .login-btn:hover { opacity: 0.85; }
+
+    /* ============ Layout ============ */
+    .app-layout { display: flex; flex-direction: column; height: 100vh; }
+
+    /* ============ Header ============ */
+    .app-header {
+      height: 64px; background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; flex-shrink: 0;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.03);
+    }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .header-logo {
+      font-family: var(--brush); font-size: 26px;
+      color: var(--text); letter-spacing: 2px;
+    }
+    .header-sep {
+      width: 1px; height: 24px; background: var(--border);
+    }
+    .header-label {
+      font-family: var(--serif); font-size: 12px;
+      color: var(--text-muted); letter-spacing: 2px;
+    }
+    .header-right { display: flex; align-items: center; gap: 20px; }
+    .stat-item {
+      display: flex; align-items: center; gap: 8px;
+      font-family: var(--serif); font-size: 13px;
+      padding: 5px 14px; background: var(--bg);
+      border: 1px solid var(--border-light);
+    }
+    .stat-item.clickable { cursor: pointer; }
+    .stat-item.clickable:hover { border-color: var(--gold); }
+    .stat-num { font-weight: 600; color: var(--gold-text); }
+    .stat-label { color: var(--text-muted); font-size: 12px; }
+    .logout-btn {
+      background: none; border: 1px solid var(--border);
+      color: var(--text-muted); font-family: var(--serif);
+      font-size: 12px; padding: 5px 14px; cursor: pointer;
+      transition: all 0.3s; letter-spacing: 2px;
+    }
+    .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ============ Main ============ */
+    .app-main { flex: 1; overflow: auto; padding: 28px 32px; }
+
+    /* ============ Tabs ============ */
+    .tab-bar {
+      display: flex; gap: 0; margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-item {
+      padding: 10px 24px;
+      font-family: var(--serif); font-size: 13px;
+      color: var(--text-muted); cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.3s; letter-spacing: 1px;
+    }
+    .tab-item:hover { color: var(--text-secondary); }
+    .tab-item.active { color: var(--gold-text); border-bottom-color: var(--gold); }
+    .tab-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 18px; height: 18px; padding: 0 5px;
+      font-size: 10px; font-weight: 600; margin-left: 6px;
+      background: var(--danger-dim); color: var(--danger);
+      border-radius: 9px;
+    }
+
+    /* ============ Toolbar ============ */
+    .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+    .search-input {
+      width: 260px; height: 38px; padding: 0 14px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      font-family: var(--serif); font-size: 13px;
+      color: var(--text); outline: none; transition: border-color 0.3s;
+    }
+    .search-input:focus { border-color: var(--gold); }
+    .search-input::placeholder { color: var(--text-muted); }
+    .tool-btn {
+      height: 38px; padding: 0 18px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      color: var(--text-secondary); font-family: var(--serif);
+      font-size: 12px; cursor: pointer; transition: all 0.3s;
+      letter-spacing: 1px;
+    }
+    .tool-btn:hover { border-color: var(--gold); color: var(--gold-text); }
+    .tool-btn.primary {
+      background: var(--gold-dim); border-color: var(--gold);
+      color: var(--gold-text);
+    }
+    .tool-btn.primary:hover { background: var(--gold); color: #fff; }
+
+    /* ============ Question Cards ============ */
+    .card-list { display: flex; flex-direction: column; gap: 12px; }
+    .q-card {
+      background: var(--bg-card); border: 1px solid var(--border-light);
+      padding: 20px 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+      transition: box-shadow 0.3s;
+    }
+    .q-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+    .q-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .q-id {
+      font-family: var(--serif); font-size: 11px;
+      color: var(--text-muted); min-width: 32px;
+    }
+    .q-type {
+      font-family: var(--serif); font-size: 10px;
+      padding: 2px 10px; letter-spacing: 1px;
+    }
+    .q-type.t0, .q-type.t1 { background: var(--gold-dim); color: var(--gold-text); }
+    .q-type.t2 { background: rgba(142,68,173,0.08); color: #8e44ad; }
+    .q-type.t3 { background: rgba(243,156,18,0.08); color: #d68910; }
+    .q-type.t4, .q-type.t5, .q-type.t6, .q-type.t7 { background: var(--success-dim); color: var(--success); }
+    .q-text {
+      font-family: var(--serif); font-size: 15px;
+      line-height: 1.8; color: var(--text); margin-bottom: 10px;
+    }
+    .q-options { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .q-opt {
+      font-family: var(--serif); font-size: 12px;
+      padding: 4px 12px; background: var(--bg);
+      border: 1px solid var(--border-light); color: var(--text-secondary);
+    }
+    .q-opt-label { color: var(--gold-text); font-weight: 600; margin-right: 4px; }
+    .q-answer {
+      font-family: var(--serif); font-size: 13px;
+      padding: 8px 14px; background: var(--success-dim);
+      border-left: 3px solid var(--success); color: var(--success);
+    }
+    .q-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .q-act {
+      font-family: var(--serif); font-size: 12px;
+      padding: 5px 14px; background: none;
+      border: 1px solid var(--border); color: var(--text-muted);
+      cursor: pointer; transition: all 0.3s; letter-spacing: 1px;
+    }
+    .q-act:hover { border-color: var(--gold); color: var(--gold-text); }
+    .q-act.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ============ Pending Cards ============ */
+    .p-card {
+      background: var(--bg-card); border: 1px solid var(--border-light);
+      border-left: 3px solid var(--gold);
+      padding: 20px 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+    }
+    .p-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+    .p-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+    .p-count {
+      font-family: var(--serif); font-size: 11px;
+      padding: 2px 10px; background: var(--danger-dim); color: var(--danger);
+    }
+    .p-time {
+      font-family: var(--serif); font-size: 10px;
+      color: var(--text-muted);
+    }
+    .p-empty {
+      font-family: var(--serif); font-size: 12px;
+      color: var(--text-muted); margin-bottom: 8px; font-style: italic;
+    }
+
+    /* ============ Pagination ============ */
+    .pager {
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; margin-top: 24px; font-family: var(--serif); font-size: 13px;
+      color: var(--text-muted);
+    }
+    .pg-btn {
+      padding: 6px 16px; background: var(--bg-card);
+      border: 1px solid var(--border); color: var(--text-secondary);
+      cursor: pointer; transition: all 0.3s;
+    }
+    .pg-btn:hover { border-color: var(--gold); color: var(--gold-text); }
+    .pg-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .pg-info { padding: 0 10px; }
+
+    /* ============ Empty ============ */
+    .empty {
+      display: flex; flex-direction: column;
+      align-items: center; padding: 80px 20px;
+      color: var(--text-muted);
+    }
+    .empty-icon { font-family: var(--brush); font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+    .empty-text { font-family: var(--serif); font-size: 14px; }
+
+    /* ============ Dialog ============ */
+    .el-dialog { background: var(--bg-card) !important; border: 1px solid var(--border) !important; border-radius: 0 !important; }
+    .el-dialog__title {
+      color: var(--text) !important; font-family: var(--brush) !important;
+      font-size: 20px !important;
+    }
+    .el-dialog__headerbtn .el-dialog__close { color: var(--text-muted) !important; }
+    .el-form-item__label {
+      color: var(--text-secondary) !important; font-family: var(--serif) !important;
+      font-size: 13px !important;
+    }
+    .el-select__wrapper, .el-textarea__inner, .el-input__wrapper {
+      background: var(--bg) !important; border: 1px solid var(--border) !important;
+      box-shadow: none !important; border-radius: 0 !important;
+      color: var(--text) !important;
+    }
+    .el-select__wrapper:hover, .el-textarea__inner:hover, .el-input__wrapper:hover {
+      border-color: var(--gold) !important;
+    }
+    .el-select__wrapper.is-focused, .el-textarea__inner:focus, .el-input__wrapper.is-focus {
+      border-color: var(--gold) !important;
+    }
+    .el-select__placeholder, .el-input__inner, .el-textarea__inner {
+      color: var(--text) !important; font-family: var(--serif) !important; font-size: 13px !important;
+    }
+    .el-dialog__footer { padding: 0 24px 24px !important; }
+    .dlg-btn {
+      height: 38px; padding: 0 24px; font-family: var(--serif); font-size: 13px;
+      border-radius: 0 !important; border: 1px solid var(--border) !important;
+      cursor: pointer; letter-spacing: 2px; transition: all 0.3s;
+    }
+    .dlg-btn.cancel { background: var(--bg) !important; color: var(--text-secondary) !important; }
+    .dlg-btn.cancel:hover { border-color: var(--text-muted) !important; }
+    .dlg-btn.confirm { background: var(--gold) !important; border-color: var(--gold) !important; color: #fff !important; }
+    .dlg-btn.confirm:hover { opacity: 0.85; }
+
+    /* ============ Option Input ============ */
+    .opt-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .opt-row .el-input__wrapper { flex: 1; }
+    .opt-label { font-family: var(--serif); font-size: 13px; color: var(--gold-text); min-width: 20px; }
+    .opt-rm {
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      background: var(--danger-dim); border: 1px solid var(--border);
+      color: var(--danger); cursor: pointer; font-size: 14px;
+      transition: all 0.3s; flex-shrink: 0;
+    }
+    .opt-rm:hover { background: var(--danger); color: #fff; }
+    .opt-add {
+      display: flex; align-items: center; gap: 6px; padding: 6px 14px;
+      background: none; border: 1px dashed var(--border);
+      color: var(--text-muted); cursor: pointer;
+      font-family: var(--serif); font-size: 12px;
+      transition: all 0.3s; margin-top: 4px;
+    }
+    .opt-add:hover { border-color: var(--gold); color: var(--gold-text); }
+    .answer-hint {
+      font-family: var(--serif); font-size: 11px;
+      color: var(--text-muted); margin-top: 4px;
+    }
+
+    /* ============ Upload ============ */
+    .upload-zone {
+      border: 2px dashed var(--border); padding: 40px;
+      text-align: center; cursor: pointer; transition: all 0.3s;
+      background: var(--bg);
+    }
+    .upload-zone:hover { border-color: var(--gold); }
+    .upload-zone p { font-family: var(--serif); font-size: 13px; color: var(--text-muted); margin-top: 8px; }
+    .import-info {
+      margin-top: 16px; padding: 12px; background: var(--bg);
+      border: 1px solid var(--border); font-family: var(--serif); font-size: 12px;
+    }
+    .import-info .ok { color: var(--success); }
+    .import-info .err { color: var(--danger); }
+
+    /* ============ Scrollbar ============ */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+    /* ============ Decorative line ============ */
+    .deco-line {
+      width: 40px; height: 2px; background: var(--gold);
+      margin: 0 auto 20px;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- Login -->
+  <div v-if="!isLoggedIn" class="login-overlay">
+    <div class="login-box">
+      <div class="login-title">題庫</div>
+      <div class="login-sub">QUESTION BANK SYSTEM</div>
+      <input class="login-input" placeholder="用户名" v-model="loginForm.username" @keyup.enter="handleLogin">
+      <input class="login-input" placeholder="密码" type="password" v-model="loginForm.password" @keyup.enter="handleLogin">
+      <button class="login-btn" @click="handleLogin">进入</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div v-else class="app-layout">
+    <header class="app-header">
+      <div class="header-left">
+        <span class="header-logo">題庫</span>
+        <span class="header-sep"></span>
+        <span class="header-label">管理面板</span>
+      </div>
+      <div class="header-right">
+        <div class="stat-item" :class="{clickable: stats.pending > 0}" @click="stats.pending > 0 && switchTab('pending')">
+          <span class="stat-label">题库</span>
+          <span class="stat-num">{{ stats.total }}</span>
+        </div>
+        <div class="stat-item clickable" @click="switchTab('pending')">
+          <span class="stat-label">待处理</span>
+          <span class="stat-num">{{ stats.pending }}</span>
+        </div>
+        <button class="logout-btn" @click="logout">退出</button>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="tab-bar">
+        <div class="tab-item" :class="{active: currentTab === 'questions'}" @click="switchTab('questions')">题库管理</div>
+        <div class="tab-item" :class="{active: currentTab === 'pending'}" @click="switchTab('pending')">
+          待处理题目
+          <span v-if="stats.pending > 0" class="tab-badge">{{ stats.pending }}</span>
+        </div>
+      </div>
+
+      <!-- Questions -->
+      <div v-show="currentTab === 'questions'">
+        <div class="toolbar">
+          <input class="search-input" placeholder="搜索题目..." v-model="searchText" @input="debounceSearch">
+          <button class="tool-btn primary" @click="openCreateModal">新增</button>
+          <button class="tool-btn" @click="showImportModal">导入</button>
+          <button class="tool-btn" @click="exportJson">导出</button>
+        </div>
+        <div class="card-list">
+          <div v-if="questions.length === 0" class="empty">
+            <div class="empty-icon">空</div>
+            <div class="empty-text">暂无题目数据</div>
+          </div>
+          <div v-for="q in questions" :key="q.id" class="q-card">
+            <div class="q-head">
+              <span class="q-id">#{{ q.id }}</span>
+              <span class="q-type" :class="'t' + q.type">{{ typeMap[q.type] || '未知' }}</span>
+            </div>
+            <div class="q-text">{{ q.question }}</div>
+            <div v-if="q.options && q.options.length" class="q-options">
+              <span v-for="(opt, i) in q.options" :key="i" class="q-opt">
+                <span class="q-opt-label">{{ String.fromCharCode(65+i) }}.</span>{{ opt }}
+              </span>
+            </div>
+            <div class="q-answer">答案: {{ q.answer }}</div>
+            <div class="q-actions">
+              <button class="q-act" @click="editQuestion(q)">编辑</button>
+              <button class="q-act danger" @click="deleteQuestion(q.id)">删除</button>
+            </div>
+          </div>
+        </div>
+        <div v-if="questionTotal > 20" class="pager">
+          <button class="pg-btn" :disabled="questionPage<=1" @click="questionPage--;loadQuestions()">上一页</button>
+          <span class="pg-info">{{ questionPage }} / {{ Math.ceil(questionTotal/20) }}</span>
+          <button class="pg-btn" :disabled="questionPage>=Math.ceil(questionTotal/20)" @click="questionPage++;loadQuestions()">下一页</button>
+        </div>
+      </div>
+
+      <!-- Pending -->
+      <div v-show="currentTab === 'pending'">
+        <div class="toolbar">
+          <input class="search-input" placeholder="搜索待处理题目..." v-model="pendingSearch" @input="debouncePendingSearch">
+          <div style="display:flex;gap:4px;">
+            <button class="tool-btn" :class="{primary: pendingSort==='count'}" @click="pendingSort='count';loadPending()">按搜索次数</button>
+            <button class="tool-btn" :class="{primary: pendingSort==='time'}" @click="pendingSort='time';loadPending()">按时间</button>
+            <button class="tool-btn" :class="{primary: pendingSort==='time_asc'}" @click="pendingSort='time_asc';loadPending()">按时间正序</button>
+          </div>
+        </div>
+        <div v-if="pendingQuestions.length === 0" class="empty">
+          <div class="empty-icon">净</div>
+          <div class="empty-text">暂无待处理题目</div>
+        </div>
+        <div class="card-list">
+          <div v-for="p in pendingQuestions" :key="p.id" class="p-card">
+            <div class="p-meta">
+              <span class="q-id">#{{ p.id }}</span>
+              <span class="q-type" :class="'t' + p.type">{{ typeMap[p.type] || '未知' }}</span>
+              <span class="p-count">被搜索 {{ p.search_count }} 次</span>
+              <span class="p-time">首次: {{ formatTime(p.created_at) }}</span>
+              <span class="p-time">最近: {{ formatTime(p.updated_at) }}</span>
+            </div>
+            <div class="q-text">{{ p.question }}</div>
+            <div v-if="p.options && p.options.length" class="q-options">
+              <span v-for="(opt, i) in p.options" :key="i" class="q-opt">
+                <span class="q-opt-label">{{ String.fromCharCode(65+i) }}.</span>{{ opt }}
+              </span>
+            </div>
+            <div v-else class="p-empty">暂无选项数据</div>
+            <div class="q-actions">
+              <button class="q-act" @click="addPendingToQuestion(p)">添加到题库</button>
+              <button class="q-act danger" @click="deletePending(p.id)">删除</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Form Modal -->
+  <el-dialog v-model="formModalVisible" :title="editingQuestion ? '编辑题目' : '新增题目'" width="600px" :close-on-click-modal="false">
+    <div class="deco-line"></div>
+    <el-form :model="form" label-position="top">
+      <el-form-item label="题目类型">
+        <el-select v-model="form.type" style="width:100%;">
+          <el-option v-for="(label, code) in typeMap" :key="code" :label="label" :value="code" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="题目内容">
+        <el-input v-model="form.question" type="textarea" :rows="3" placeholder="输入题目内容" />
+      </el-form-item>
+      <el-form-item v-if="form.type==='0'||form.type==='1'" label="选项">
+        <div v-for="(opt, i) in form.options" :key="i" class="opt-row">
+          <span class="opt-label">{{ String.fromCharCode(65+i) }}.</span>
+          <input style="flex:1;height:34px;padding:0 12px;color:var(--text);font-family:var(--serif);font-size:13px;background:var(--bg);border:1px solid var(--border);outline:none;" :value="opt" @input="form.options[i]=$event.target.value">
+          <div class="opt-rm" @click="form.options.splice(i,1)">×</div>
+        </div>
+        <button class="opt-add" @click="form.options.push('')">+ 添加选项</button>
+      </el-form-item>
+      <el-form-item label="答案">
+        <el-input v-model="form.answer" :placeholder="answerPlaceholder" />
+        <div class="answer-hint">{{ answerHint }}</div>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <button class="dlg-btn cancel" @click="formModalVisible=false">取消</button>
+      <button class="dlg-btn confirm" @click="saveQuestion">保存</button>
+    </template>
+  </el-dialog>
+
+  <!-- Import Modal -->
+  <el-dialog v-model="importModalVisible" title="导入题库" width="500px" :close-on-click-modal="false">
+    <div class="deco-line"></div>
+    <div class="upload-zone" @click="$refs.fileInput.click()" @dragover.prevent @drop.prevent="handleFileDrop">
+      <div style="font-family:var(--brush);font-size:36px;color:var(--text-muted);opacity:0.4;">↑</div>
+      <p>点击或拖拽 JSON 文件到这里</p>
+      <p style="margin-top:4px;font-size:11px;">最大 10MB</p>
+    </div>
+    <input ref="fileInput" type="file" accept=".json" style="display:none;" @change="handleFileSelect">
+    <div v-if="importPreview" class="import-info">
+      <div>文件: {{ importPreview.name }}</div>
+      <div><span class="ok">有效: {{ importPreview.valid }} 道</span></div>
+      <div v-if="importPreview.invalid>0"><span class="err">无效: {{ importPreview.invalid }} 道</span></div>
+    </div>
+    <template #footer>
+      <button class="dlg-btn cancel" @click="importModalVisible=false">取消</button>
+      <button class="dlg-btn confirm" :disabled="!importPreview" @click="doImport">导入</button>
+    </template>
+  </el-dialog>
+</div>
+
+<script>
+const {createApp, ref, reactive, computed, onMounted} = Vue;
+const typeMap = {'0':'单选题','1':'多选题','2':'填空题','3':'判断题','4':'简答题','5':'名词解释','6':'论述题','7':'计算题'};
+
+createApp({
+  setup() {
+    const isLoggedIn = ref(sessionStorage.getItem('isLoggedIn')==='true');
+    const loginForm = reactive({username:'',password:''});
+    const currentTab = ref('questions');
+    const questions = ref([]);
+    const questionTotal = ref(0);
+    const questionPage = ref(1);
+    const searchText = ref('');
+    const pendingQuestions = ref([]);
+    const pendingSearch = ref('');
+    const pendingSort = ref('count');
+    const stats = reactive({total:0, pending:0});
+    const formModalVisible = ref(false);
+    const editingQuestion = ref(null);
+    const form = reactive({question:'', type:'0', options:[], answer:''});
+    const importModalVisible = ref(false);
+    const importPreview = ref(null);
+    const importFile = ref(null);
+
+    const answerHint = computed(() => ({
+      '0':'单选题答案为单个选项，如: A',
+      '1':'多选题答案用 # 分隔，如: A#B#C',
+      '2':'填空题多个空用 | 分隔',
+      '3':'判断题答案为: 正确 或 错误',
+      '4':'简答题直接填写答案内容',
+      '5':'名词解释填写解释内容',
+      '6':'论述题填写论述内容',
+      '7':'计算题填写计算结果'
+    }[form.type]||''));
+
+    const answerPlaceholder = computed(() => ({
+      '0':'如: A', '1':'如: A#B#C', '2':'如: 答案1|答案2',
+      '3':'正确', '4':'简答内容', '5':'名词解释', '6':'论述内容', '7':'计算结果'
+    }[form.type]||'输入答案'));
+
+    const handleLogin = () => {
+      if (loginForm.username==='admin' && loginForm.password==='admin') {
+        isLoggedIn.value = true;
+        sessionStorage.setItem('isLoggedIn','true');
+        loadStats(); loadQuestions();
+      } else { ElementPlus.ElMessage.error('用户名或密码错误'); }
+    };
+
+    const logout = () => { isLoggedIn.value=false; sessionStorage.removeItem('isLoggedIn'); };
+
+    const loadStats = async () => {
+      try {
+        const r = await fetch('/api/stats').then(r=>r.json());
+        if (r.code===1) { stats.total=r.data.total; stats.pending=r.data.pending; }
+      } catch(e) {}
+    };
+
+    const loadQuestions = async () => {
+      try {
+        const off = (questionPage.value-1)*20;
+        const p = new URLSearchParams({limit:20, offset:off});
+        if (searchText.value) p.set('search', searchText.value);
+        const r = await fetch('/api/questions?'+p).then(r=>r.json());
+        if (r.code===1) { questions.value=r.data; questionTotal.value=r.total; }
+      } catch(e) {}
+    };
+
+    const loadPending = async () => {
+      try {
+        const p = new URLSearchParams({limit:200, sort:pendingSort.value});
+        if (pendingSearch.value) p.set('search', pendingSearch.value);
+        const r = await fetch('/api/pending?'+p).then(r=>r.json());
+        if (r.code===1) pendingQuestions.value = r.data;
+      } catch(e) {}
+    };
+
+    const switchTab = (t) => { currentTab.value=t; if(t==='pending') loadPending(); };
+
+    let _st = null;
+    const debounceSearch = () => { clearTimeout(_st); _st=setTimeout(()=>{questionPage.value=1;loadQuestions();},300); };
+
+    let _pt = null;
+    const debouncePendingSearch = () => { clearTimeout(_pt); _pt=setTimeout(()=>{loadPending();},300); };
+
+    const openCreateModal = () => { editingQuestion.value=null; form.question=''; form.type='0'; form.options=[]; form.answer=''; formModalVisible.value=true; };
+
+    const editQuestion = (q) => { editingQuestion.value=q; form.question=q.question; form.type=q.type; form.options=[...(q.options||[])]; form.answer=q.answer; formModalVisible.value=true; };
+
+    const saveQuestion = async () => {
+      if (!form.question.trim()) return ElementPlus.ElMessage.warning('请输入题目内容');
+      if (!form.answer.trim()) return ElementPlus.ElMessage.warning('请输入答案');
+      const body = {question:form.question.trim(), type:form.type, options:form.options.filter(o=>o.trim()), answer:form.answer.trim()};
+      try {
+        let r;
+        if (editingQuestion.value) {
+          r = await fetch('/api/questions/'+editingQuestion.value.id, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(r=>r.json());
+        } else {
+          r = await fetch('/api/questions', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(r=>r.json());
+        }
+        if (r.code===1) { ElementPlus.ElMessage.success(editingQuestion.value?'更新成功':'创建成功'); formModalVisible.value=false; loadQuestions(); loadStats(); }
+        else ElementPlus.ElMessage.error(r.msg||'操作失败');
+      } catch(e) { ElementPlus.ElMessage.error('请求失败'); }
+    };
+
+    const deleteQuestion = async (id) => {
+      try {
+        await ElementPlus.ElMessageBox.confirm('确定删除该题目?','确认',{type:'warning'});
+        const r = await fetch('/api/questions/'+id,{method:'DELETE'}).then(r=>r.json());
+        if (r.code===1) { ElementPlus.ElMessage.success('已删除'); loadQuestions(); loadStats(); }
+      } catch(e) {}
+    };
+
+    const addPendingToQuestion = (p) => { editingQuestion.value=null; form.question=p.question; form.type=p.type; form.options=[...(p.options||[])]; form.answer=''; formModalVisible.value=true; };
+
+    const deletePending = async (id) => {
+      try {
+        await ElementPlus.ElMessageBox.confirm('确定删除?','确认',{type:'warning'});
+        const r = await fetch('/api/pending/'+id,{method:'DELETE'}).then(r=>r.json());
+        if (r.code===1) { ElementPlus.ElMessage.success('已删除'); loadPending(); loadStats(); }
+      } catch(e) {}
+    };
+
+    const showImportModal = () => { importPreview.value=null; importFile.value=null; importModalVisible.value=true; };
+
+    const handleFileSelect = (e) => { const f=e.target.files[0]; if(f) validateAndPreview(f); };
+    const handleFileDrop = (e) => { const f=e.dataTransfer.files[0]; if(f) validateAndPreview(f); };
+
+    const validateAndPreview = (file) => {
+      if (file.size>10*1024*1024) return ElementPlus.ElMessage.error('文件过大');
+      importFile.value=file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const d = JSON.parse(e.target.result);
+          if (!Array.isArray(d)) return ElementPlus.ElMessage.error('JSON 根元素必须是数组');
+          let v=0, inv=0;
+          d.forEach(q => { if(q.question&&q.type&&q.answer) v++; else inv++; });
+          importPreview.value = {name:file.name, valid:v, invalid:inv, total:d.length};
+        } catch(err) { ElementPlus.ElMessage.error('JSON 解析失败'); }
+      };
+      reader.readAsText(file);
+    };
+
+    const doImport = async () => {
+      if (!importFile.value) return;
+      const fd = new FormData(); fd.append('file', importFile.value);
+      try {
+        const r = await fetch('/api/import-json',{method:'POST',body:fd}).then(r=>r.json());
+        if (r.code===1) { ElementPlus.ElMessage.success('导入成功，共 '+r.total+' 道题目'); importModalVisible.value=false; loadQuestions(); loadStats(); }
+        else ElementPlus.ElMessage.error(r.detail||'导入失败');
+      } catch(e) { ElementPlus.ElMessage.error('导入请求失败'); }
+    };
+
+    const exportJson = () => { window.location.href='/api/export-json'; };
+
+    const formatTime = (t) => {
+      if (!t) return '-';
+      const d = new Date(t+(t.includes('Z')||t.includes('+')?'':'Z'));
+      return d.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    };
+
+    onMounted(() => { if(isLoggedIn.value){loadStats();loadQuestions();} });
+
+    return {
+      isLoggedIn, loginForm, handleLogin, logout,
+      currentTab, switchTab,
+      questions, questionTotal, questionPage, loadQuestions,
+      searchText, debounceSearch,
+      pendingQuestions, pendingSearch, pendingSort, loadPending, debouncePendingSearch,
+      stats, typeMap,
+      formModalVisible, editingQuestion, form,
+      answerHint, answerPlaceholder,
+      openCreateModal, editQuestion, saveQuestion, deleteQuestion,
+      addPendingToQuestion, deletePending,
+      importModalVisible, importPreview, importFile,
+      showImportModal, handleFileSelect, handleFileDrop, doImport,
+      exportJson, formatTime
+    };
+  }
+}).use(ElementPlus).mount('#app');
+</script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+============================================
+      自定义题库服务器接口要求文档
+============================================
+
+一、接口基本信息
+----------------
+
+请求方式: HTTP POST
+请求格式: JSON
+响应格式: JSON
+
+
+二、请求参数
+----------------
+
+脚本会向配置的URL发送如下JSON格式的POST请求：
+
+{
+  "question": "题目内容",
+  "type": "题目类型(0-7)",
+  "key": "用户配置的API密钥(可选)"
+}
+
+参数说明:
+- question: 题目文本内容 (字符串)
+- type: 题目类型 (字符串)
+  * "0" - 单选题
+  * "1" - 多选题
+  * "2" - 填空题
+  * "3" - 判断题
+  * "4" - 简答题
+  * "5" - 名词解释
+  * "6" - 论述题
+  * "7" - 计算题
+- key: 用户配置的API密钥，用于身份验证 (字符串，可选)
+
+
+三、响应格式
+----------------
+
+服务器需要返回JSON格式的响应，支持以下两种成功状态码：
+
+### 成功响应 (code: -1 或 1)
+
+{
+  "code": -1,
+  "msg": "查询成功",
+  "data": {
+    "answer": "答案内容",
+    "num": "100",
+    "usenum": "50"
+  }
+}
+
+或简化的格式：
+
+{
+  "code": 1,
+  "answer": "答案内容"
+}
+
+字段说明:
+- code: 状态码，-1 或 1 表示成功
+- msg: 提示信息 (可选)
+- data: 数据对象
+  * answer: 答案内容 (字符串或字符串数组)
+    - 单选题/判断题: 返回单个答案字符串
+    - 多选题: 可用"#"分隔多个答案，如 "A#B#C"
+  * num: 总查询次数 (可选)
+  * usenum: 已使用次数 (可选)
+
+
+### 失败响应
+
+{
+  "code": 0,
+  "msg": "未找到答案",
+  "data": {}
+}
+
+
+四、完整示例
+----------------
+
+### 请求示例
+
+POST http://your-server.com/api/search
+Content-Type: application/json
+
+{
+  "question": "建筑施工中，安全电压是多少伏？",
+  "type": "0",
+  "key": "your_api_key"
+}
+
+
+### 响应示例 - 单选题
+
+{
+  "code": -1,
+  "msg": "查询成功",
+  "data": {
+    "answer": "36V",
+    "num": "1000",
+    "usenum": "100"
+  }
+}
+
+
+### 响应示例 - 多选题
+
+{
+  "code": -1,
+  "msg": "查询成功",
+  "data": {
+    "answer": "A#C#D",
+    "num": "1000",
+    "usenum": "100"
+  }
+}
+
+
+### 响应示例 - 判断题
+
+{
+  "code": -1,
+  "msg": "查询成功",
+  "data": {
+    "answer": "正确",
+    "num": "1000",
+    "usenum": "100"
+  }
+}
+
+
+五、服务器实现参考 (Node.js + Express)
+----------------
+
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+// 题库数据示例
+const questionDB = [
+  {
+    question: "建筑施工中，安全电压是多少伏？",
+    type: "0",
+    answer: "36V"
+  },
+  {
+    question: "以下哪些是安全防护措施？",
+    type: "1",
+    answer: "A#B#D"
+  }
+];
+
+app.post('/api/search', (req, res) => {
+  const { question, type, key } = req.body;
+  
+  // 验证API密钥(如果需要)
+  if (key !== 'your_expected_key') {
+    return res.json({ code: 0, msg: '密钥无效' });
+  }
+  
+  // 查找题目
+  const result = questionDB.find(q => 
+    q.question.includes(question) || question.includes(q.question)
+  );
+  
+  if (result) {
+    res.json({
+      code: -1,
+      msg: '查询成功',
+      data: {
+        answer: result.answer,
+        num: '1000',
+        usenum: '1'
+      }
+    });
+  } else {
+    res.json({
+      code: 0,
+      msg: '未找到答案',
+      data: {}
+    });
+  }
+});
+
+app.listen(3000, () => {
+  console.log('题库服务器运行在 http://localhost:3000');
+});
+
+
+六、注意事项
+----------------
+
+1. 跨域支持: 服务器需要支持CORS，允许学习通域名访问
+   - 需要允许的Origin: https://mooc1.chaoxing.com
+
+2. 响应时间: 建议控制在3秒内，超时脚本会自动降级
+
+3. HTTPS: 生产环境建议使用HTTPS
+
+4. 答案格式:
+   - 单选题/判断题: 直接返回答案文本
+   - 多选题: 多个答案用"#"分隔
+   - 填空题: 多个空用"|"分隔
+
+5. 身份验证: 通过key参数进行简单的API密钥验证
+
+
+七、脚本配置说明
+----------------
+
+在脚本的配置面板中：
+
+1. 启用自定义题库: 开关，开启后优先使用自定义接口
+2. 自定义题库地址: 填写完整的API URL
+   例如: http://localhost:3000/api/search
+3. 自定义题库密钥: 填写服务器要求的API密钥(如果有)
+
+配置完成后保存并刷新页面即可生效。
