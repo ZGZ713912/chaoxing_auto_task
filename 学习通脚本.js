@@ -6,6 +6,7 @@
 // @description  💯超星学习通满分助手，挂机解放时间，无需任何操作自动完成所有任务点。汇集全网免费、付费题库接口支持一键对接，答案更全更靠谱。
 // @icon         https://vitejs.dev/logo.svg
 // @match        *://*.chaoxing.com/*
+// @match        *://*.xuexitong.com/*
 // @match        *://*.edu.cn/*
 // @match        *://*.nbdlib.cn/*
 // @match        *://*.hnsyu.net/*

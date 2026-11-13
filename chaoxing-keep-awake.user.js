@@ -5,6 +5,7 @@
 // @description  屏蔽失焦/切屏导致的视频暂停，自动继续播放；右下角小圆钮一键开关服务（ON 生效 / OFF 完全还原）
 // @author       noir
 // @match        *://*.chaoxing.com/*
+// @match        *://*.xuexitong.com/*
 // @match        *://*.edu.cn/*
 // @match        *://*.nbdlib.cn/*
 // @match        *://*.hnsyu.net/*
